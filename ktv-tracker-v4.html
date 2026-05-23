@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>夜场管理</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg:#080810;--s1:#0f0f1a;--s2:#161622;--s3:#1e1e2e;
+  --border:#252535;--border2:#303045;
+  --gold:#d4a843;--gold2:#f0c060;
+  --red:#ff3d5a;--green:#00e096;--blue:#4d9fff;--purple:#a855f7;
+  --text:#ddddf0;--muted:#5a5a78;--muted2:#3a3a55;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;min-height:100vh;padding-bottom:90px;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:8px;color:var(--gold);margin-bottom:4px;}
+.login-logo em{color:var(--muted);font-style:normal;}
+.login-sub{font-size:9px;color:var(--muted);letter-spacing:4px;margin-bottom:52px;}
+.login-box{width:100%;max-width:320px;background:var(--s1);border:1px solid var(--border2);border-radius:14px;padding:24px 20px 28px;}
+.lf{margin-bottom:14px;}
+.lf label{font-size:9px;color:var(--muted);letter-spacing:1.5px;display:block;margin-bottom:6px;}
+.lf input{width:100%;background:var(--s3);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;padding:11px 12px;border-radius:7px;outline:none;transition:border-color .15s;}
+.lf input:focus{border-color:var(--gold);}
+.login-btn{width:100%;padding:13px;background:var(--gold);color:#080810;border:none;border-radius:7px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;cursor:pointer;margin-top:6px;transition:opacity .15s;}
+.login-btn:active{opacity:.8;}
+.login-err{color:var(--red);font-size:10px;text-align:center;margin-top:10px;letter-spacing:1px;min-height:16px;}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--gold);}
+.logo em{color:var(--muted);font-style:normal;}
+.header-right{display:flex;align-items:center;gap:8px;}
+#clock{font-size:11px;color:var(--gold2);letter-spacing:1px;}
+.user-chip{display:flex;align-items:center;gap:5px;background:var(--s3);border:1px solid var(--border2);border-radius:20px;padding:3px 9px;font-size:10px;}
+.user-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);}
+.user-chip .role{color:var(--muted);}
+.logout-btn{font-size:9px;color:var(--red);letter-spacing:1px;background:none;border:1px solid rgba(255,61,90,.3);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all .15s;}
+.logout-btn:hover{background:rgba(255,61,90,.1);}
+
+/* TABS */
+.tabs{display:flex;background:var(--s1);border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:10px 0;text-align:center;font-size:10px;letter-spacing:1.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab.hidden{display:none;}
+
+/* STRIP */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.strip-cell{background:var(--s1);padding:10px 6px;text-align:center;}
+.strip-val{font-family:'Bebas Neue',sans-serif;font-size:26px;}
+.strip-label{font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:1px;}
+
+/* SEARCH BAR */
+.search-bar{padding:10px 12px;background:var(--s1);border-bottom:1px solid var(--border);position:relative;}
+.search-input{width:100%;background:var(--s3);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:9px 12px 9px 36px;border-radius:8px;outline:none;transition:border-color .15s;}
+.search-input:focus{border-color:var(--gold);}
+.search-icon{position:absolute;left:22px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;opacity:.5;}
+.search-clear{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:16px;cursor:pointer;color:var(--muted);display:none;}
+
+/* GIRL CARDS */
+.page{padding:12px;}
+.girl-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.girl-card-header{background:var(--s2);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.girl-name-row{display:flex;align-items:center;gap:8px;}
+.girl-avatar{width:32px;height:32px;background:var(--s3);border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--gold);}
+.girl-name{font-size:14px;font-weight:600;}
+.girl-sub{font-size:9px;color:var(--muted);margin-top:1px;}
+.girl-stats{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.stat-chip{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid;}
+.chip-fly    {border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.1);}
+.chip-booking{border-color:var(--blue);  color:var(--blue);  background:rgba(77,159,255,.1);}
+.chip-active {border-color:var(--green); color:var(--green); background:rgba(0,224,150,.1);animation:glow .8s infinite alternate;}
+.chip-idle   {border-color:var(--muted2);color:var(--muted); background:transparent;}
+@keyframes glow{from{box-shadow:0 0 0 0 rgba(0,224,150,.3);}to{box-shadow:0 0 6px 2px rgba(0,224,150,.15);}}
+
+/* SESSIONS */
+.sessions{padding:0 12px 10px;}
+.session-row{display:grid;grid-template-columns:3fr 2fr 2fr auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.session-row:last-child{border-bottom:none;}
+.session-room{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold2);}
+.session-type-fly    {color:var(--purple);font-size:9px;letter-spacing:1px;}
+.session-type-booking{color:var(--blue);  font-size:9px;letter-spacing:1px;}
+.session-time{color:var(--muted);font-size:10px;}
+.timer-pill{font-family:'Bebas Neue',sans-serif;font-size:15px;padding:2px 8px;border-radius:6px;letter-spacing:1px;white-space:nowrap;}
+.tp-ok    {background:rgba(0,224,150,.1); color:var(--green);border:1px solid rgba(0,224,150,.3);}
+.tp-warn  {background:rgba(255,165,0,.1); color:#ffaa00;     border:1px solid rgba(255,165,0,.3);}
+.tp-danger{background:rgba(255,61,90,.15);color:var(--red);  border:1px solid rgba(255,61,90,.4);animation:blink .7s infinite;}
+.tp-done  {background:var(--s3);          color:var(--muted);border:1px solid var(--border);}
+@keyframes blink{50%{opacity:.5;}}
+.session-actions{display:flex;gap:4px;}
+.s-btn{padding:4px 7px;border-radius:5px;border:1px solid var(--border2);background:var(--s3);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;transition:all .15s;}
+.s-btn:hover{border-color:var(--gold);color:var(--gold);}
+.s-btn.end  {border-color:var(--red);  color:var(--red);  background:rgba(255,61,90,.08);}
+.s-btn.clock{border-color:var(--green);color:var(--green);background:rgba(0,224,150,.08);}
+.add-session-btn{width:100%;margin-top:6px;padding:8px;background:transparent;border:1px dashed var(--border2);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;border-radius:6px;cursor:pointer;transition:all .15s;}
+.add-session-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:12px;letter-spacing:1px;}
+.empty-icon{font-size:36px;opacity:.3;margin-bottom:12px;}
+
+/* FAB */
+.fab{position:fixed;bottom:24px;right:16px;width:52px;height:52px;background:var(--gold);color:#080810;border:none;border-radius:50%;font-size:26px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(212,168,67,.4);z-index:150;transition:transform .15s;}
+.fab:active{transform:scale(.9);}
+
+/* LOG */
+.log-row{background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start;font-size:11px;}
+.log-time{color:var(--gold);font-size:9px;flex-shrink:0;padding-top:1px;}
+
+/* ADMIN */
+.admin-section{background:var(--s1);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+.admin-title{background:var(--s2);padding:10px 14px;font-size:10px;letter-spacing:2px;color:var(--gold);border-bottom:1px solid var(--border);}
+.acc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;}
+.acc-row:last-child{border-bottom:none;}
+.acc-role{font-size:9px;padding:2px 8px;border-radius:20px;border:1px solid;margin-left:8px;}
+.role-admin  {border-color:var(--gold);  color:var(--gold);  background:rgba(212,168,67,.1);}
+.role-mummy  {border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.1);}
+.role-cashier{border-color:var(--blue);  color:var(--blue);  background:rgba(77,159,255,.1);}
+.acc-del{font-size:9px;color:var(--red);background:none;border:1px solid rgba(255,61,90,.3);border-radius:4px;padding:2px 7px;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+
+/* roster row in admin */
+.roster-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:11px;}
+.roster-row:last-child{border-bottom:none;}
+.roster-num{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold2);min-width:44px;}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:200;align-items:flex-end;}
+.overlay.open{display:flex;}
+.modal{background:var(--s2);border:1px solid var(--border2);border-radius:16px 16px 0 0;padding:20px 16px 36px;width:100%;max-height:85vh;overflow-y:auto;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);margin-bottom:16px;}
+.field{margin-bottom:12px;}
+.field label{font-size:9px;color:var(--muted);letter-spacing:1.5px;display:block;margin-bottom:5px;}
+.field input,.field select{width:100%;background:var(--s3);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 12px;border-radius:7px;outline:none;transition:border-color .15s;}
+.field input:focus,.field select:focus{border-color:var(--gold);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.type-opt{padding:10px;border-radius:7px;border:1px solid var(--border2);background:var(--s3);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;text-align:center;transition:all .15s;}
+.type-opt.sel-fly    {border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.12);}
+.type-opt.sel-booking{border-color:var(--blue);  color:var(--blue);  background:rgba(77,159,255,.12);}
+.modal-btns{display:flex;gap:8px;margin-top:18px;}
+.mbtn{flex:1;padding:12px;border-radius:7px;border:1px solid var(--border2);background:var(--s3);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;transition:all .15s;}
+.mbtn.confirm{background:rgba(212,168,67,.15);border-color:var(--gold);color:var(--gold);}
+
+/* girl lookup / dropdown */
+.code-wrap{position:relative;}
+.lookup-result{margin-top:6px;padding:10px 12px;background:var(--s3);border:1px solid var(--border2);border-radius:7px;font-size:12px;display:none;}
+.lookup-result.found{border-color:var(--green);color:var(--green);}
+.lookup-result.notfound{border-color:var(--red);color:var(--red);}
+.code-dropdown{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--s2);border:1px solid var(--gold);border-radius:8px;z-index:500;max-height:200px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+.code-dropdown.open{display:block;}
+.dd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;}
+.dd-item:last-child{border-bottom:none;}
+.dd-item:hover,.dd-item.highlighted{background:rgba(212,168,67,.1);}
+.dd-code{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold2);min-width:40px;}
+.dd-name{font-size:12px;}
+.dd-empty{padding:12px;font-size:11px;color:var(--muted);text-align:center;}
+
+/* duplicate warning modal */
+.dup-modal{background:var(--s2);border:1px solid var(--red);border-radius:16px 16px 0 0;padding:24px 20px 36px;width:100%;}
+.dup-icon{font-size:36px;text-align:center;margin-bottom:10px;}
+.dup-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--red);text-align:center;margin-bottom:8px;}
+.dup-body{font-size:12px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:20px;}
+.dup-girl-info{background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:12px;text-align:center;margin-bottom:20px;}
+.dup-girl-num{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold2);}
+.dup-girl-name{font-size:14px;font-weight:600;margin-top:2px;}
+.dup-girl-meta{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* TOAST */
+.toasts{position:fixed;top:62px;right:12px;z-index:300;pointer-events:none;display:flex;flex-direction:column;gap:6px;}
+.toast{background:var(--s2);border:1px solid var(--red);border-radius:8px;padding:10px 14px;max-width:240px;font-size:11px;box-shadow:0 4px 20px rgba(255,61,90,.25);animation:tin .3s ease;}
+.toast-ttl{color:var(--red);font-size:9px;letter-spacing:1px;margin-bottom:3px;}
+@keyframes tin{from{transform:translateX(110%);opacity:0;}to{transform:none;opacity:1;}}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">夜 <em>MGR</em></div>
+  <div class="login-sub">VENUE MANAGEMENT SYSTEM</div>
+  <div class="login-box">
+    <div class="lf"><label>用户名 USERNAME</label><input id="login-user" placeholder="输入用户名" autocomplete="off" autocorrect="off" autocapitalize="off" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
+    <div class="lf"><label>密码 PASSWORD</label><input id="login-pass" type="password" placeholder="输入密码" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="login-btn" onclick="doLogin()">登 入</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+
+<header>
+  <div class="logo">夜 <em>MGR</em></div>
+  <div class="header-right">
+    <div id="clock">--:--</div>
+    <div class="user-chip"><div class="dot"></div><span id="user-name-display">--</span><span class="role" id="user-role-display"></span></div>
+    <button class="logout-btn" onclick="doLogout()">登出</button>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="strip-cell"><div class="strip-val" id="s-girls" style="color:var(--gold)">0</div><div class="strip-label">花名册</div></div>
+  <div class="strip-cell"><div class="strip-val" id="s-active" style="color:var(--green)">0</div><div class="strip-label">服务中</div></div>
+  <div class="strip-cell"><div class="strip-val" id="s-warn" style="color:var(--red)">0</div><div class="strip-label">快到时</div></div>
+  <div class="strip-cell"><div class="strip-val" id="s-fly" style="color:var(--purple)">0</div><div class="strip-label">飞台数</div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="girls">小姐状态</div>
+  <div class="tab" data-tab="rooms">房间总览</div>
+  <div class="tab" data-tab="log">记录</div>
+  <div class="tab hidden" data-tab="admin" id="tab-admin">管理员</div>
+</div>
+
+<!-- Search bar (girls tab only) -->
+<div class="search-bar" id="search-bar">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" id="search-input" placeholder="搜索编号或姓名..." autocomplete="off" oninput="onSearch(this.value)">
+  <span class="search-clear" id="search-clear" onclick="clearSearch()">✕</span>
+</div>
+
+<div class="page" id="page-girls"></div>
+<div class="page" id="page-rooms" style="display:none"></div>
+<div class="page" id="page-log" style="display:none"></div>
+<div class="page" id="page-admin" style="display:none"></div>
+
+<button class="fab" id="fab">＋</button>
+<div class="toasts" id="toasts"></div>
+</div><!-- /app -->
+
+<!-- SESSION MODAL (mummy: lookup by code) -->
+<div class="overlay" id="modal-session">
+  <div class="modal">
+    <div class="modal-title" id="session-modal-title">📋 新增记录</div>
+    <div class="field">
+      <label>小姐编号</label>
+      <div class="code-wrap">
+        <input id="sess-code" placeholder="输入编号或姓名筛选…" autocomplete="off" autocorrect="off" autocapitalize="characters"
+          oninput="onCodeInput(this.value)"
+          onfocus="openDropdown()"
+          onkeydown="onCodeKey(event)">
+        <div class="code-dropdown" id="code-dropdown"></div>
+      </div>
+      <div class="lookup-result" id="lookup-result"></div>
+    </div>
+    <div class="field">
+      <label>类型</label>
+      <div class="type-toggle">
+        <div class="type-opt sel-fly" id="type-fly" onclick="selectType('fly')">飞台</div>
+        <div class="type-opt" id="type-booking" onclick="selectType('booking')">BOOKING</div>
+      </div>
+    </div>
+    <div class="field"><label>房间号</label><input id="sess-room" placeholder="例：101"></div>
+    <div class="field-row">
+      <div class="field"><label>开始时间</label><input id="sess-start" type="time"></div>
+      <div class="field"><label>结束时间</label><input id="sess-end" type="time"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn" onclick="closeModal('modal-session')">取消</button>
+      <button class="mbtn confirm" onclick="confirmSession()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- DUPLICATE WARNING MODAL -->
+<div class="overlay" id="modal-dup">
+  <div class="dup-modal">
+    <div class="dup-icon">⚠️</div>
+    <div class="dup-title">重复记录</div>
+    <div class="dup-body">该小姐在此时段已有进行中的记录</div>
+    <div class="dup-girl-info" id="dup-girl-info"></div>
+    <div class="modal-btns">
+      <button class="mbtn" onclick="closeModal('modal-dup')">返回修改</button>
+      <button class="mbtn confirm" onclick="forceConfirmSession()">仍然新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ACCOUNT MODAL -->
+<div class="overlay" id="modal-account">
+  <div class="modal">
+    <div class="modal-title">👤 新增账户</div>
+    <div class="field"><label>用户名</label><input id="acc-username" placeholder="输入用户名" autocomplete="off"></div>
+    <div class="field"><label>密码</label><input id="acc-password" type="password" placeholder="输入密码"></div>
+    <div class="field"><label>角色</label>
+      <select id="acc-role">
+        <option value="mummy">Mummy（妈咪）</option>
+        <option value="cashier">收银 Cashier</option>
+        <option value="admin">管理员 Admin</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn" onclick="closeModal('modal-account')">取消</button>
+      <button class="mbtn confirm" onclick="confirmAddAccount()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ROSTER GIRL MODAL (admin only) -->
+<div class="overlay" id="modal-roster-add">
+  <div class="modal">
+    <div class="modal-title">🌸 导入小姐资料</div>
+    <div class="field"><label>编号（唯一）</label><input id="r-code" placeholder="例：A01" autocomplete="off" autocorrect="off" autocapitalize="characters"></div>
+    <div class="field"><label>姓名</label><input id="r-name" placeholder="例：小美"></div>
+    <div class="modal-btns">
+      <button class="mbtn" onclick="closeModal('modal-roster-add')">取消</button>
+      <button class="mbtn confirm" onclick="confirmRosterAdd()">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ACCOUNTS ─────────────────────────────────────────────────────────────
+let accounts = [
+  {username:'admin',  password:'admin888', role:'admin'},
+  {username:'mummy1', password:'mummy123', role:'mummy'},
+  {username:'cashier',password:'cash123',  role:'cashier'},
+];
+let currentUser = null;
+
+// ── ROSTER (admin imports: code -> name) ──────────────────────────────────
+// { code, name }  – code is unique identifier
+let roster = [
+  {code:'A01', name:'小美'},
+  {code:'A02', name:'小红'},
+  {code:'A03', name:'小玲'},
+  {code:'B01', name:'小晴'},
+  {code:'B02', name:'小燕'},
+];
+
+// ── DATA ──────────────────────────────────────────────────────────────────
+let girls    = [];   // { id, code, name }  – active tonight
+let sessions = [];   // { id, girlId, room, start, end, type, ended }
+let logs     = [];
+let nextId   = 1;
+let alertedSessions = new Set();
+let selectedType    = 'fly';
+let pendingSession  = null; // for duplicate override
+let searchQuery     = '';
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const acc = accounts.find(a => a.username===u && a.password===p);
+  if (!acc) { document.getElementById('login-err').textContent='用户名或密码错误'; document.getElementById('login-pass').value=''; return; }
+  currentUser = {username:acc.username, role:acc.role};
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('user-name-display').textContent = acc.username;
+  const rl={admin:'管理员',mummy:'妈咪',cashier:'收银'};
+  document.getElementById('user-role-display').textContent='· '+(rl[acc.role]||acc.role);
+  if(acc.role==='admin') document.getElementById('tab-admin').classList.remove('hidden');
+  if(acc.role==='cashier') document.getElementById('fab').style.display='none';
+  logEvt(`${acc.username} 登入系统`);
+  seed(); renderAll();
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').textContent='';
+  document.getElementById('tab-admin').classList.add('hidden');
+  document.getElementById('fab').style.display='';
+  girls=[]; sessions=[]; logs=[]; nextId=1; alertedSessions=new Set(); searchQuery='';
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function uid(){ return nextId++; }
+function nowMin(){ const d=new Date(); return d.getHours()*60+d.getMinutes(); }
+function timeToMin(s){ const[h,m]=s.split(':').map(Number); return h*60+m; }
+function minToStr(m){ const h=Math.floor(((m%1440)+1440)%1440/60),mn=((m%1440)+1440)%1440%60; return String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0'); }
+function remaining(s){ if(s.ended) return 0; return s.end-nowMin(); }
+function logEvt(msg){ const t=new Date().toLocaleTimeString('zh',{hour:'2-digit',minute:'2-digit',hour12:false}); logs.unshift({t,msg}); if(logs.length>100) logs.pop(); }
+
+// ── SEED ──────────────────────────────────────────────────────────────────
+function seed(){
+  const now=nowMin();
+  // activate 3 girls from roster
+  const activate=['A01','A02','A03'];
+  activate.forEach(code=>{
+    const r=roster.find(x=>x.code===code);
+    if(r && !girls.find(g=>g.code===code)) girls.push({id:uid(),code:r.code,name:r.name});
+  });
+  const g=girls;
+  sessions=[
+    {id:uid(),girlId:g[0].id,room:'101',start:now-90,end:now+5,  type:'fly',    ended:false},
+    {id:uid(),girlId:g[0].id,room:'103',start:now-50,end:now+70, type:'fly',    ended:false},
+    {id:uid(),girlId:g[1].id,room:'202',start:now-60,end:now+120,type:'booking',ended:false},
+    {id:uid(),girlId:g[2].id,room:'104',start:now-30,end:now+8,  type:'fly',    ended:false},
+  ];
+  logEvt('系统启动，示例数据已载入');
+}
+
+// ── SEARCH ────────────────────────────────────────────────────────────────
+function onSearch(val){
+  searchQuery = val.trim().toLowerCase();
+  document.getElementById('search-clear').style.display = searchQuery ? 'block' : 'none';
+  renderGirls();
+}
+function clearSearch(){
+  document.getElementById('search-input').value='';
+  onSearch('');
+}
+
+function filteredGirls(){
+  if(!searchQuery) return girls;
+  return girls.filter(g =>
+    g.code.toLowerCase().includes(searchQuery) ||
+    g.name.toLowerCase().includes(searchQuery)
+  );
+}
+
+// ── RENDER GIRLS ──────────────────────────────────────────────────────────
+function renderGirls(){
+  const pg=document.getElementById('page-girls');
+  const list=filteredGirls();
+  const canEdit=currentUser&&currentUser.role!=='cashier';
+  if(!list.length){
+    pg.innerHTML=searchQuery
+      ? `<div class="empty"><div class="empty-icon">🔍</div>找不到「${searchQuery}」</div>`
+      : `<div class="empty"><div class="empty-icon">🌸</div>今晚尚无在场小姐<br><span style="font-size:10px;color:var(--muted2)">妈咪按 ＋ 输入编号即可开台</span></div>`;
+    return;
+  }
+  pg.innerHTML='';
+  list.forEach(girl=>{
+    const gs=sessions.filter(s=>s.girlId===girl.id);
+    const active=gs.filter(s=>!s.ended);
+    const flyCount=gs.filter(s=>s.type==='fly').length;
+    const bkCount =gs.filter(s=>s.type==='booking').length;
+    const isActive=active.length>0;
+    const currentRooms=active.map(s=>s.room).join(', ');
+    let chips='';
+    if(flyCount) chips+=`<div class="stat-chip chip-fly">飞台×${flyCount}</div>`;
+    if(bkCount)  chips+=`<div class="stat-chip chip-booking">BK×${bkCount}</div>`;
+    chips+=isActive?`<div class="stat-chip chip-active">● ${currentRooms}</div>`:`<div class="stat-chip chip-idle">空闲</div>`;
+    const card=document.createElement('div');
+    card.className='girl-card';
+    card.innerHTML=`
+      <div class="girl-card-header" onclick="toggleCard(${girl.id})">
+        <div class="girl-name-row">
+          <div class="girl-avatar">${girl.code}</div>
+          <div><div class="girl-name">${girl.name}</div><div class="girl-sub">编号 ${girl.code} · ${gs.length} 条记录</div></div>
+        </div>
+        <div class="girl-stats">${chips}</div>
+      </div>
+      <div class="sessions" id="sessions-${girl.id}">
+        ${renderSessionRows(girl.id,canEdit)}
+        ${canEdit?`<button class="add-session-btn" onclick="openSessionModalForGirl(${girl.id})">＋ 新增记录</button>`:''}
+      </div>`;
+    pg.appendChild(card);
+  });
+}
+
+function renderSessionRows(girlId,canEdit){
+  const gs=sessions.filter(s=>s.girlId===girlId);
+  if(!gs.length) return '<div style="padding:8px 0;font-size:11px;color:var(--muted)">暂无记录</div>';
+  return gs.map(s=>{
+    const rem=remaining(s);
+    let tp;
+    if(s.ended)      tp=`<div class="timer-pill tp-done">结束</div>`;
+    else if(rem<0)   tp=`<div class="timer-pill tp-danger">超${Math.abs(rem)}分</div>`;
+    else if(rem<=10) tp=`<div class="timer-pill tp-warn">${rem}分</div>`;
+    else             tp=`<div class="timer-pill tp-ok">${rem}分</div>`;
+    const tl=s.type==='fly'?`<div class="session-type-fly">飞台</div>`:`<div class="session-type-booking">BOOKING</div>`;
+    const ac=(canEdit&&!s.ended)?`<div class="session-actions"><button class="s-btn clock" onclick="addClock(${s.id})">+钟</button><button class="s-btn end" onclick="endSession(${s.id})">结束</button></div>`:'<div></div>';
+    return `<div class="session-row"><div><div class="session-room">房 ${s.room}</div>${tl}</div><div class="session-time">${minToStr(s.start)}<br>${minToStr(s.end)}</div>${tp}${ac}</div>`;
+  }).join('');
+}
+
+// ── RENDER ROOMS ──────────────────────────────────────────────────────────
+function renderRooms(){
+  const pg=document.getElementById('page-rooms');
+  const active=sessions.filter(s=>!s.ended);
+  const rm={};
+  active.forEach(s=>{ if(!rm[s.room])rm[s.room]=[]; rm[s.room].push(s); });
+  if(!Object.keys(rm).length){pg.innerHTML=`<div class="empty"><div class="empty-icon">🚪</div>暂无开台房间</div>`;return;}
+  pg.innerHTML=Object.entries(rm).sort().map(([room,ss])=>{
+    const rows=ss.map(s=>{
+      const g=girls.find(x=>x.id===s.girlId);
+      const rem=remaining(s);
+      const cls=rem<0?'tp-danger':rem<=10?'tp-warn':'tp-ok';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+        <div><span style="font-size:13px;font-weight:600">${g?.name||'?'}</span><span style="font-size:10px;color:var(--muted);margin-left:5px">${g?.code||''}</span><span style="margin-left:8px;font-size:9px;color:${s.type==='fly'?'var(--purple)':'var(--blue)'}">${s.type==='fly'?'飞台':'BOOKING'}</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:var(--muted)">${minToStr(s.start)}–${minToStr(s.end)}</span><div class="timer-pill ${cls}">${rem<0?'超'+Math.abs(rem)+'分':rem+'分'}</div></div>
+      </div>`;
+    }).join('');
+    return `<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:var(--s2);padding:9px 12px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold2)">房间 ${room}</div>
+        <div style="font-size:10px;color:var(--muted)">${ss.length} 人</div>
+      </div><div style="padding:0 12px 4px">${rows}</div></div>`;
+  }).join('');
+}
+
+// ── RENDER LOG ────────────────────────────────────────────────────────────
+function renderLog(){
+  const pg=document.getElementById('page-log');
+  if(!logs.length){pg.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>暂无记录</div>`;return;}
+  pg.innerHTML=logs.map(l=>`<div class="log-row"><div class="log-time">${l.t}</div><div>${l.msg}</div></div>`).join('');
+}
+
+// ── RENDER ADMIN ──────────────────────────────────────────────────────────
+function renderAdmin(){
+  const pg=document.getElementById('page-admin');
+  const rl={admin:'管理员',mummy:'妈咪',cashier:'收银'};
+  const rc={admin:'role-admin',mummy:'role-mummy',cashier:'role-cashier'};
+  const accRows=accounts.map((a,i)=>{
+    const isMe=currentUser&&a.username===currentUser.username;
+    return `<div class="acc-row"><div style="display:flex;align-items:center"><span>${a.username}</span><span class="acc-role ${rc[a.role]||'role-mummy'}">${rl[a.role]||a.role}</span></div>${isMe?'<span style="font-size:9px;color:var(--muted)">(本人)</span>':`<button class="acc-del" onclick="deleteAccount(${i})">删除</button>`}</div>`;
+  }).join('');
+  const rosterRows=roster.map((r,i)=>`
+    <div class="roster-row">
+      <span class="roster-num">${r.code}</span>
+      <span style="flex:1">${r.name}</span>
+      <button class="acc-del" onclick="deleteRosterEntry(${i})">删除</button>
+    </div>`).join('');
+  pg.innerHTML=`
+    <div class="admin-section">
+      <div class="admin-title">账户管理 ACCOUNTS</div>
+      ${accRows}
+    </div>
+    <button class="mbtn confirm" style="width:100%;padding:12px;border-radius:8px;margin-bottom:16px" onclick="openModal('modal-account')">＋ 新增账户</button>
+    <div class="admin-section">
+      <div class="admin-title">花名册 ROSTER（${roster.length} 人）</div>
+      ${rosterRows||'<div style="padding:14px;font-size:11px;color:var(--muted);text-align:center">暂无记录</div>'}
+    </div>
+    <button class="mbtn confirm" style="width:100%;padding:12px;border-radius:8px" onclick="openModal('modal-roster-add')">＋ 导入小姐资料</button>`;
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────
+function renderSummary(){
+  const active=sessions.filter(s=>!s.ended);
+  const girlsActive=new Set(active.map(s=>s.girlId)).size;
+  const warn=active.filter(s=>remaining(s)<=10).length;
+  const fly=sessions.filter(s=>s.type==='fly').length;
+  document.getElementById('s-girls').textContent=roster.length;
+  document.getElementById('s-active').textContent=girlsActive;
+  document.getElementById('s-warn').textContent=warn;
+  document.getElementById('s-fly').textContent=fly;
+}
+
+// ── ALERTS ────────────────────────────────────────────────────────────────
+function checkAlerts(){
+  sessions.filter(s=>!s.ended).forEach(s=>{
+    const rem=remaining(s);
+    const g=girls.find(x=>x.id===s.girlId);
+    if(rem<=10&&rem>0&&!alertedSessions.has(s.id+'_w')){ alertedSessions.add(s.id+'_w'); toast(`房间 ${s.room} — ${g?.name}`,`还剩 ${rem} 分钟，是否加钟？`); }
+    if(rem<0&&!alertedSessions.has(s.id+'_o')){ alertedSessions.add(s.id+'_o'); toast(`⚠️ 超时 — ${g?.name} 房间 ${s.room}`,`已超时 ${Math.abs(rem)} 分钟`); }
+  });
+}
+function toast(title,msg){
+  const tc=document.getElementById('toasts');
+  const el=document.createElement('div'); el.className='toast';
+  el.innerHTML=`<div class="toast-ttl">🔔 ${title}</div>${msg}`;
+  tc.appendChild(el); setTimeout(()=>el.remove(),7000);
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────
+function endSession(id){
+  const s=sessions.find(x=>x.id===id); if(!s)return;
+  s.ended=true;
+  const g=girls.find(x=>x.id===s.girlId);
+  logEvt(`${g?.name}(${g?.code}) 结束 房间${s.room}（${s.type==='fly'?'飞台':'BOOKING'}）`);
+  renderAll();
+}
+function addClock(id){
+  const s=sessions.find(x=>x.id===id); if(!s)return;
+  s.end+=60; alertedSessions.delete(s.id+'_w'); alertedSessions.delete(s.id+'_o');
+  const g=girls.find(x=>x.id===s.girlId);
+  logEvt(`${g?.name}(${g?.code}) 房间${s.room} 加钟至 ${minToStr(s.end)}`);
+  renderAll();
+}
+function toggleCard(girlId){
+  const el=document.getElementById('sessions-'+girlId);
+  el.style.display=el.style.display==='none'?'':'none';
+}
+function deleteAccount(i){
+  if(accounts[i].username===currentUser?.username){alert('不能删除自己');return;}
+  if(!confirm(`确定删除账户 "${accounts[i].username}"？`))return;
+  accounts.splice(i,1); renderAdmin();
+}
+function deleteRosterEntry(i){
+  const r=roster[i];
+  if(!confirm(`确定从花名册删除 ${r.code} ${r.name}？`))return;
+  roster.splice(i,1); renderAdmin(); renderSummary();
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────
+document.getElementById('fab').onclick=()=>openSessionModal();
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>{ o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }); });
+
+// ── CODE DROPDOWN ─────────────────────────────────────────────────────────
+let ddHighlight = -1;
+
+function openDropdown(){
+  renderDropdown(document.getElementById('sess-code').value);
+  document.getElementById('code-dropdown').classList.add('open');
+}
+
+function closeDropdown(){
+  document.getElementById('code-dropdown').classList.remove('open');
+  ddHighlight = -1;
+}
+
+function renderDropdown(query){
+  const dd = document.getElementById('code-dropdown');
+  const q = query.trim().toLowerCase();
+  const matches = q
+    ? roster.filter(r => r.code.toLowerCase().includes(q) || r.name.toLowerCase().includes(q))
+    : roster;
+  if(!matches.length){
+    dd.innerHTML=`<div class="dd-empty">找不到结果</div>`;
+  } else {
+    dd.innerHTML = matches.map((r,i)=>`
+      <div class="dd-item" data-code="${r.code}" data-idx="${i}"
+        onmousedown="selectCode('${r.code}','${r.name}')"
+        onmouseover="highlightItem(${i})">
+        <span class="dd-code">${r.code}</span>
+        <span class="dd-name">${r.name}</span>
+      </div>`).join('');
+  }
+  ddHighlight = -1;
+}
+
+function highlightItem(idx){
+  ddHighlight = idx;
+  document.querySelectorAll('#code-dropdown .dd-item').forEach((el,i)=>{
+    el.classList.toggle('highlighted', i===idx);
+  });
+}
+
+function selectCode(code, name){
+  document.getElementById('sess-code').value = code;
+  showLookupResult(code, name);
+  closeDropdown();
+}
+
+function onCodeInput(val){
+  renderDropdown(val);
+  document.getElementById('code-dropdown').classList.add('open');
+  const code = val.trim().toUpperCase();
+  const found = roster.find(r=>r.code===code);
+  if(found) showLookupResult(found.code, found.name);
+  else if(code) {
+    const lr=document.getElementById('lookup-result');
+    lr.textContent=`✗  找不到编号 "${code}"`;
+    lr.className='lookup-result notfound';
+    lr.style.display='block';
+  } else {
+    document.getElementById('lookup-result').style.display='none';
+  }
+}
+
+function showLookupResult(code, name){
+  const lr=document.getElementById('lookup-result');
+  lr.textContent=`✓  ${code}  ${name}`;
+  lr.className='lookup-result found';
+  lr.style.display='block';
+}
+
+function onCodeKey(e){
+  const dd=document.getElementById('code-dropdown');
+  const items=dd.querySelectorAll('.dd-item');
+  if(!dd.classList.contains('open')) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); ddHighlight=Math.min(ddHighlight+1,items.length-1); highlightItem(ddHighlight); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); ddHighlight=Math.max(ddHighlight-1,0); highlightItem(ddHighlight); }
+  else if(e.key==='Enter'&&ddHighlight>=0){ e.preventDefault(); const el=items[ddHighlight]; if(el) selectCode(el.dataset.code, el.querySelector('.dd-name').textContent); }
+  else if(e.key==='Escape'){ closeDropdown(); }
+}
+
+// close dropdown when clicking outside
+document.addEventListener('mousedown', e=>{
+  if(!e.target.closest('.code-wrap')) closeDropdown();
+});
+
+function openSessionModal(){
+  document.getElementById('session-modal-title').textContent='📋 新增记录';
+  document.getElementById('sess-code').value='';
+  document.getElementById('lookup-result').style.display='none';
+  closeDropdown();
+  const now=new Date();
+  document.getElementById('sess-start').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const end=new Date(now.getTime()+60*60000);
+  document.getElementById('sess-end').value=String(end.getHours()).padStart(2,'0')+':'+String(end.getMinutes()).padStart(2,'0');
+  document.getElementById('sess-room').value='';
+  selectType('fly');
+  openModal('modal-session');
+}
+
+function openSessionModalForGirl(girlId){
+  const g=girls.find(x=>x.id===girlId);
+  document.getElementById('session-modal-title').textContent=`📋 ${g?.name} — 新增记录`;
+  document.getElementById('sess-code').value=g?.code||'';
+  closeDropdown();
+  if(g) showLookupResult(g.code, g.name); else document.getElementById('lookup-result').style.display='none';
+  const now=new Date();
+  document.getElementById('sess-start').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const end=new Date(now.getTime()+60*60000);
+  document.getElementById('sess-end').value=String(end.getHours()).padStart(2,'0')+':'+String(end.getMinutes()).padStart(2,'0');
+  document.getElementById('sess-room').value='';
+  selectType('fly');
+  openModal('modal-session');
+}
+
+function selectType(t){
+  selectedType=t;
+  document.getElementById('type-fly').className='type-opt'+(t==='fly'?' sel-fly':'');
+  document.getElementById('type-booking').className='type-opt'+(t==='booking'?' sel-booking':'');
+}
+
+function confirmSession(){
+  const code=document.getElementById('sess-code').value.trim().toUpperCase();
+  const room=document.getElementById('sess-room').value.trim();
+  const start=document.getElementById('sess-start').value;
+  const end=document.getElementById('sess-end').value;
+  if(!code||!room||!start||!end){alert('请填写完整');return;}
+
+  const rEntry=roster.find(r=>r.code===code);
+  if(!rEntry){alert(`找不到编号 "${code}"，请联系管理员先导入该小姐资料`);return;}
+
+  const startMin=timeToMin(start);
+  let endMin=timeToMin(end);
+  if(endMin<=startMin) endMin+=1440;
+
+  // ensure girl exists in tonight's active list
+  let girl=girls.find(g=>g.code===code);
+  if(!girl){
+    girl={id:uid(),code:rEntry.code,name:rEntry.name};
+    girls.push(girl);
+  }
+
+  // duplicate check: same girl, overlapping active session
+  const overlap=sessions.find(s=>s.girlId===girl.id&&!s.ended);
+  if(overlap){
+    // store pending and show dup modal
+    pendingSession={girlId:girl.id,room,startMin,endMin};
+    const g=girl;
+    const activeRoom=sessions.filter(s=>s.girlId===g.id&&!s.ended).map(s=>s.room).join(', ');
+    document.getElementById('dup-girl-info').innerHTML=`
+      <div class="dup-girl-num">${g.code}</div>
+      <div class="dup-girl-name">${g.name}</div>
+      <div class="dup-girl-meta">目前仍在进行中：房间 ${activeRoom}</div>`;
+    closeModal('modal-session');
+    openModal('modal-dup');
+    return;
+  }
+  doAddSession(girl.id,room,startMin,endMin);
+}
+
+function forceConfirmSession(){
+  if(!pendingSession)return;
+  const{girlId,room,startMin,endMin}=pendingSession;
+  pendingSession=null;
+  closeModal('modal-dup');
+  doAddSession(girlId,room,startMin,endMin);
+}
+
+function doAddSession(girlId,room,startMin,endMin){
+  sessions.push({id:uid(),girlId,room,start:startMin,end:endMin,type:selectedType,ended:false});
+  const g=girls.find(x=>x.id===girlId);
+  logEvt(`${g?.name}(${g?.code}) → 房间${room} ${selectedType==='fly'?'飞台':'BOOKING'} ${minToStr(startMin)}–${minToStr(endMin)}`);
+  closeModal('modal-session');
+  renderAll();
+}
+
+function confirmAddAccount(){
+  const u=document.getElementById('acc-username').value.trim();
+  const p=document.getElementById('acc-password').value;
+  const r=document.getElementById('acc-role').value;
+  if(!u||!p){alert('请填写完整');return;}
+  if(accounts.find(a=>a.username===u)){alert('用户名已存在');return;}
+  accounts.push({username:u,password:p,role:r});
+  logEvt(`新增账户：${u}（${r}）`);
+  document.getElementById('acc-username').value='';
+  document.getElementById('acc-password').value='';
+  closeModal('modal-account'); renderAdmin();
+}
+
+function confirmRosterAdd(){
+  const code=document.getElementById('r-code').value.trim().toUpperCase();
+  const name=document.getElementById('r-name').value.trim();
+  if(!code||!name){alert('请填写完整');return;}
+  if(roster.find(r=>r.code===code)){
+    alert(`编号 "${code}" 已存在于花名册，请使用其他编号`);
+    return;
+  }
+  roster.push({code,name});
+  logEvt(`管理员导入小姐：${code} ${name}`);
+  document.getElementById('r-code').value='';
+  document.getElementById('r-name').value='';
+  closeModal('modal-roster-add');
+  renderAdmin(); renderSummary();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const name=tab.dataset.tab;
+    ['girls','rooms','log','admin'].forEach(p=>{ document.getElementById('page-'+p).style.display=p===name?'':'none'; });
+    document.getElementById('search-bar').style.display=name==='girls'?'':'none';
+    if(name==='rooms') renderRooms();
+    if(name==='log')   renderLog();
+    if(name==='admin') renderAdmin();
+  });
+});
+
+// ── CLOCK & TICK ──────────────────────────────────────────────────────────
+function updateClock(){ document.getElementById('clock').textContent=new Date().toLocaleTimeString('zh',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); }
+function renderAll(){ renderGirls(); renderRooms(); renderLog(); renderSummary(); }
+let lastMin=-1;
+function tick(){
+  updateClock();
+  const m=nowMin();
+  if(m!==lastMin){ lastMin=m; if(currentUser){renderAll();checkAlerts();} }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+setInterval(tick,5000);
+updateClock();
+setInterval(updateClock,1000);
+</script>
+</body>
+</html>
